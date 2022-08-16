@@ -6,7 +6,7 @@
 </h1>
 
 <div align="center">
-  ventx/stackx-terraform-aws-cluster
+  {{ .RepoSlug }}
   <br />
   <a href="#about"><strong>Explore the diagrams »</strong></a>
   <br />
@@ -24,7 +24,7 @@
 [![Project license](https://img.shields.io/github/license/{{ .RepoSlug }}.svg?style=flat-square)](LICENSE)
 
 [![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://github.com/{{ .RepoSlug }}/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
-[![code with love by ventx](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%99%A5%20by-ventx-ff1414.svg?style=flat-square)](https://github.com/ventx)
+[![code with love by ventx](https://img.shields.io/badge/%3C%2F%3E%20with%20♥%20by-ventx-blue)](https://github.com/ventx)
 
 </div>
 
