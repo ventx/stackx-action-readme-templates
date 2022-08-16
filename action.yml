@@ -1,0 +1,20 @@
+name: stackx README template generator
+description: Create README for stackx Github repositories
+inputs:
+  helm:
+    description: Enable Helm README template
+    required: false
+    default: 'false'
+  terraform:
+    description: Enable Terraform README template
+    required: false
+    default: 'false'
+outputs:
+  time:
+    description: The time we greeted you
+runs:
+  using: docker
+  image: Dockerfile
+  args:
+    - -helm=${{ inputs.helm }}
+    - -terraform=${{ inputs.terraform }}
