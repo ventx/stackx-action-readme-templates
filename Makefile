@@ -501,11 +501,23 @@ tf-init: ## Run terraform init for your code.
 	@terraform init
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
+.PHONY: tflint
+t-lint: tflint
 .PHONY: t-lint
 t-lint: tf-lint
-.PHONY: tf-validate
-tf-lint: ## Run tflilnt for your code.
+.PHONY: tf-lint
+tf-lint: ## Run tflint for your code.
 	@printf "\nTERRAFORM - Run tflint ..."
+	@tflint .
+	@printf "\033[36m make $@\033[0m: Finished\n"
+
+.PHONY: tfsec
+tfsec: tf-tfsec
+.PHONY: t-tfsec
+t-tfsec: tf-tfsec
+.PHONY: tf-tfsec
+tf-tfsec: ## Run tfsec for your code.
+	@printf "\nTERRAFORM - Run tfsec ..."
 	@tflint .
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
