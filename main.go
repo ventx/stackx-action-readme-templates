@@ -25,7 +25,7 @@ type About struct {
 }
 
 type BuiltWith struct {
-	BuiltWith string
+	BuiltWith interface{}
 }
 
 type DocsCodeOfConduct struct {
@@ -195,6 +195,7 @@ func main() {
 	}
 
 	var aboutDesc interface{}
+	var builtwithDesc interface{}
 	var features interface{}
 	var imageDesc1 interface{}
 	var imageDesc2 interface{}
@@ -211,6 +212,10 @@ func main() {
 
 		if k == "about" {
 			aboutDesc = v
+		}
+
+		if k == "builwith" {
+			builtwithDesc = v
 		}
 
 		if k == "features" {
@@ -289,7 +294,7 @@ func main() {
 	log.Printf("--> Building template: %s", about.ParseName)
 	var builtwithBuffer bytes.Buffer
 	builtwithTemplate := BuiltWith{
-		BuiltWith: "builtwithblah",
+		BuiltWith: builtwithDesc,
 	}
 	err = builtwith.Execute(&builtwithBuffer, builtwithTemplate)
 	if err != nil {
