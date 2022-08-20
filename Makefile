@@ -502,7 +502,8 @@ tf-init: ## Run terraform init for your code.
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: tflint
-t-lint: tflint
+tflint: tf-lint
+t-lint: tf-lint
 .PHONY: t-lint
 t-lint: tf-lint
 .PHONY: tf-lint
