@@ -529,17 +529,24 @@ tf-local: tf-local-start
 .PHONY: tf-local-start
 tf-local-start: ## Run localstack
 	@printf "\nLOCALSTACK - Run localstack (detached in the background) ..."
-	@export LOCALSTACK="true"
 	@localstack start -d
-	@export LOCALSTACK="true"
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
+.PHONY: t-localf
+t-localf: tf-local-startf
+.PHONY: tf-localf
+tf-localf: tf-local-startf
+.PHONY: tf-local-startf
+tf-local-startf: ## Run localstack in foreground
+	@printf "\nBLOCKING - Run localstack (attach, blocking) ..."
+	@localstack start
+	@printf "\033[36m make $@\033[0m: Finished\n"
+
+
 .PHONY: tf-local-stop
-tf-local-stop: ## Run localstack
+tf-local-stop: ## Stop localstack
 	@printf "\nLOCALSTACK - Stop localstack ..."
-	@export LOCALSTACK="false"
 	@localstack stop
-	@unset LOCALSTACK
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: t-plan
