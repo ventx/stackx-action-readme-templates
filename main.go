@@ -22,6 +22,7 @@ type About struct {
 	ImageDesc2 interface{}
 	ImageFile1 interface{}
 	ImageFile2 interface{}
+	RepoSlug   string
 }
 
 type BuiltWith struct {
@@ -284,6 +285,7 @@ func main() {
 		ImageDesc2: imageDesc2,
 		ImageFile1: imageFile1,
 		ImageFile2: ImageFile2,
+		RepoSlug:   ghSlug,
 	}
 	err = about.Execute(&aboutBuffer, aboutTemplate)
 	if err != nil {
