@@ -5,10 +5,6 @@ Please note we have a [code of conduct](CODE_OF_CONDUCT.md), please follow it in
 
 ## Development environment setup
 
-> **[?]**
-> Proceed to describe how to setup local development environment.
-> e.g:
-
 To set up a development environment, please follow these steps:
 
 1. Clone the repo
@@ -17,7 +13,20 @@ To set up a development environment, please follow these steps:
    git clone https://github.com/{{ .RepoSlug }}
    ```
 
-2. TODO
+2. Install [pre-commit](https://pre-commit.com) hooks
+
+   ```sh
+   pre-commit install
+   ```
+
+3. Install tools with asdf:
+
+   ```sh
+   asdf install
+   ```
+
+4. TODO
+
 
 ## Issues and feature requests
 
