@@ -1,4 +1,7 @@
+SHELL = /usr/bin/env bash
+.SHELLFLAGS = -ec -o pipefail
 .ONESHELL:
+.DEFAULT_GOAL := help
 
 IMG_BACKEND ?= localhost:5001/stackx-backend:0.0.0
 IMG_CONTROLLER ?= localhost:5001/stackx-controller:0.0.0
@@ -6,8 +9,6 @@ IMG_FRONTEND ?= localhost:5001/stackx-frontend:0.0.0
 K8S_VERSION = 1.23
 OS := $(shell uname -s | tr A-Z a-z)
 SCHEMA_URL := https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master
-SHELL = /usr/bin/env bash -o pipefail
-.SHELLFLAGS = -ec
 
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -471,10 +472,9 @@ t-clean: tf-clean
 tf-clean: ## Remove lockfiles and terraform states.
 	@printf "\nTERRAFORM - Cleanup state and lockfiles ..."
 	@sudo find . -type d -name .terraform -exec rm -rf {} \;
-	@rm -f .terraform.lock.hcl
-	@rm -f examples/.terraform.lock.hcl
-	@rm -f terraform.tfstate*
-	@rm -f examples/terraform.tfstate*
+	@rm -rf .terraform examples/.terraform examples/all/.terraform examples/non-k8s/.terraform tests/.terraform
+	@rm -f terraform.tfstate* examples/terraform.tfstate* examples/all/terraform.tfstate* examples/non-k8s/terraform.tfstate*
+	@rm -f .terraform.lock.hcl examples/.terraform.lock.hcl examples/all/.terraform.lock.hcl examples/non-k8s/.terraform.lock.hcl tests/.terraform.lock.hcl
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: t-destroy
@@ -567,7 +567,7 @@ tf-test: tf-test-init ## Run terratest for your code.
 
 .PHONY: tf-test-fast
 tf-test-fast: ## Run terratest against localstack with 64 (tf-test: 16) parallel requests for your code.
-	@printf "\nTERRAFORM - Run terratest against localstack with 64 parallel requests ..."
+	@printf "\nTERRAFORM - Run terratest against localstack with 64 parallel requests ...\n"
 	@cd tests && go test -v -count 1 -short -timeout "10m" -parallel 64 `go list ./...`
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
@@ -575,6 +575,14 @@ tf-test-init:
 ifeq (,$(wildcard ./tests/go.mod))
 	cd tests && go mod init $(shell basename $(CURDIR))
 endif
+
+.PHONY: t-lint
+t-lint: tf-lint
+.PHONY: tf-lint
+tf-lint: ## Run tflilnt for your code.
+	@printf "\nTERRAFORM - Run tflint ..."
+	@tflint .
+	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: t-validate
 t-validate: tf-validate
