@@ -18,6 +18,7 @@
 
 Our Terraform modules are are highly opionated:
 
+* Keep modules small, focused, simple and easy to understand
 * Prefer simple code over complex code
 * Prefer [KISS](https://en.wikipedia.org/wiki/KISS_principle) > [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
 * Set some sane default values for variables, but do not set a default value if user input is strictly required
