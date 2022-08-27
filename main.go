@@ -147,9 +147,9 @@ var ventx *template.Template
 const readmeTmplPath = "./docs/README.md.tmpl"
 const readmeConfPath = "./docs/README.yaml"
 const readmeFilePath = "README.md"
-const docsCocPath = "CODE_OF_CONDUCT.md"
-const docsContributingPath = "CONTRIBUTING.md"
-const docsSecurityPath = "SECURITY.md"
+const docsCocPath = "./.github/CODE_OF_CONDUCT.md"
+const docsContributingPath = "./.github/CONTRIBUTING.md"
+const docsSecurityPath = "./.github/SECURITY.md"
 
 // Using the init function to make sure the template is only parsed once in the program
 func init() {
