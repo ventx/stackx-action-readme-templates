@@ -519,7 +519,7 @@ t-tfsec: tf-tfsec
 .PHONY: tf-tfsec
 tf-tfsec: ## Run tfsec for your code.
 	@printf "\nTERRAFORM - Run tfsec ..."
-	@tflint .
+	@tfsec .
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: t-local
