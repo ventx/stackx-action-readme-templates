@@ -576,14 +576,6 @@ ifeq (,$(wildcard ./tests/go.mod))
 	cd tests && go mod init $(shell basename $(CURDIR))
 endif
 
-.PHONY: t-lint
-t-lint: tf-lint
-.PHONY: tf-lint
-tf-lint: ## Run tflilnt for your code.
-	@printf "\nTERRAFORM - Run tflint ..."
-	@tflint .
-	@printf "\033[36m make $@\033[0m: Finished\n"
-
 .PHONY: t-validate
 t-validate: tf-validate
 .PHONY: tf-validate
