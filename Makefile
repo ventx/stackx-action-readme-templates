@@ -471,7 +471,6 @@ t-clean: tf-clean
 .PHONY: tf-clean
 tf-clean: ## Remove lockfiles and terraform states.
 	@printf "\nTERRAFORM - Cleanup state and lockfiles ..."
-	@sudo find . -type d -name .terraform -exec rm -rf {} \;
 	@rm -rf .terraform examples/.terraform examples/all/.terraform examples/non-k8s/.terraform tests/.terraform
 	@rm -f terraform.tfstate* examples/terraform.tfstate* examples/all/terraform.tfstate* examples/non-k8s/terraform.tfstate*
 	@rm -f .terraform.lock.hcl examples/.terraform.lock.hcl examples/all/.terraform.lock.hcl examples/non-k8s/.terraform.lock.hcl tests/.terraform.lock.hcl
