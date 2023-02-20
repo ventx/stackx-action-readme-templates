@@ -5,7 +5,7 @@
 IMG_BACKEND ?= localhost:5001/stackx-backend:0.0.0
 IMG_CONTROLLER ?= localhost:5001/stackx-controller:0.0.0
 IMG_FRONTEND ?= localhost:5001/stackx-frontend:0.0.0
-K8S_VERSION = 1.23
+K8S_VERSION = 1.25.6
 OS := $(shell uname -s | tr A-Z a-z)
 SCHEMA_URL := https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master
 
@@ -79,7 +79,9 @@ b-docker-build-dev: back-docker-build-dev
 back-docker-build-dev: ## Build development docker image with hot-reloading.
 	@printf "\nBACKEND - Build custom dev image for minikube with hot-reloading ..."
 	@cd ../ && docker build -t ${IMG_BACKEND} -f stackx-backend/hack/Dockerfile .
+	@cd ../stackx-backend && docker build -t ${IMG_BACKEND} -f hack/Dockerfile .
 	@printf "\033[36m make $@\033[0m: Finished\n"
+
 
 .PHONY: b-docker-push
 b-docker-push: back-docker-push
@@ -361,12 +363,12 @@ else
 endif
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
-.PHONY: kubeval
-kubeval: ## Run kubeval on your chart.
-	@printf "\nHELM - Run kubeval ..."
+.PHONY: kubeconform
+kubeconform: ## Run kubeconform on your chart.
+	@printf "\nHELM - Run kubeconform ..."
 	@rm -rf manifests/*
 	@helm template chart/$(CHART) --output-dir manifests -f ci/values-test.yaml
-	@find manifests -name '*.yaml' | grep -v crd | xargs kubeval -v $(KUBE_VERSION) --strict --schema-location ${SCHEMA_URL} --ignore-missing-schemas
+	@find manifests -name '*.yaml' | grep -v crd | xargs kubeconform -kubernetes-version $(KUBE_VERSION) --strict --schema-location ${SCHEMA_URL} --ignore-missing-schemas
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: kubesec
