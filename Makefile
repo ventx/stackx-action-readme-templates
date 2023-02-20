@@ -79,10 +79,8 @@ b-docker-build-dev: back-docker-build-dev
 back-docker-build-dev: ## Build development docker image with hot-reloading.
 	@printf "\nBACKEND - Build custom dev image for minikube with hot-reloading ..."
 	@printf "\nBACKEND: Copy stackx-controller ...\n"
-	@rm -rf ./stackx-controller && cp -rf ../stackx-controller .
-	@cd ../stackx-backend && docker build -t ${IMG_BACKEND} -f hack/Dockerfile .
+	@cd ../stackx-backend && rm -rf ./stackx-controller && cp -rf ../stackx-controller . && docker build -t ${IMG_BACKEND} -f hack/Dockerfile .
 	@printf "\033[36m make $@\033[0m: Finished\n"
-
 
 .PHONY: b-docker-push
 b-docker-push: back-docker-push
