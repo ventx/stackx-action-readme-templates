@@ -442,7 +442,7 @@ mk-start: minikube-start
 .PHONY: minikube-start
 minikube-start: ## Starts a new Minikube cluster.
 	@printf "\nStarting minikube cluster ..."
-	@minikube start --driver=docker --cpus=4 --memory=8192 --nodes 2 -p stackx --kubernetes-version=v1.23.6 --mount-string="$(shell dirname $$(pwd))/:/tmp/git" --mount
+	@minikube start --driver=docker --cpus=4 --memory=8192 --nodes 2 -p stackx --kubernetes-version=v${K8S_VERSION} --mount-string="$(shell dirname $$(pwd))/:/tmp/git" --mount
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: stop
