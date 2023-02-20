@@ -78,7 +78,6 @@ b-docker-build-dev: back-docker-build-dev
 .PHONY: back-docker-build-dev
 back-docker-build-dev: ## Build development docker image with hot-reloading.
 	@printf "\nBACKEND - Build custom dev image for minikube with hot-reloading ..."
-	@cd ../ && docker build -t ${IMG_BACKEND} -f stackx-backend/hack/Dockerfile .
 	@cd ../stackx-backend && docker build -t ${IMG_BACKEND} -f hack/Dockerfile .
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
