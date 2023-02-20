@@ -5,7 +5,7 @@
 IMG_BACKEND ?= localhost:5001/stackx-backend:0.0.0
 IMG_CONTROLLER ?= localhost:5001/stackx-controller:0.0.0
 IMG_FRONTEND ?= localhost:5001/stackx-frontend:0.0.0
-K8S_VERSION = 1.25.6
+K8S_VERSION = 1.25.3
 OS := $(shell uname -s | tr A-Z a-z)
 SCHEMA_URL := https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master
 
@@ -21,8 +21,10 @@ endif
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[48;5;17m\033[1m\stackx Makefile\033[0m\n\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-.PHONY: dev
-dev: minikube-start docker-build-dev dep-deploy minikube-load minikube-deploy ## Starts complete development environment.
+.PHONY: dev start-dev start
+dev: kind-start local-registry docker-build-dev docker-push-dev kind-context dep-deploy deploy-all ## Starts complete development environment.
+start: start-dev
+start-dev: dev ## 🚀 (start) Starts Minikube, build & deploy ALL for dev (hot reload).
 
 tmux: ## Start a tmux session and within the development environment.
 	@cd ../stackx-backend && ./hack/tmux.sh
@@ -47,11 +49,11 @@ back-doc: ## Build Swagger/OpenAPI documentation.
 	@cd ../stackx-backend && swag init -g main.go --output docs
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
-.PHONY: b-deploy-kind
-b-deploy-kind: back-deploy-kind
-.PHONY: back-deploy-kind
-back-deploy-kind: ## Deploy to K8s Kind cluster.
-	@printf "\nBACKEND - Deploy to kind ..."
+.PHONY: b-deploy-local
+b-deploy-kind: back-deploy-local
+.PHONY: back-deploy-local
+back-deploy-local: ## Deploy to local K8s cluster.
+	@printf "\nBACKEND - Deploy to local K8s ..."
 	@kubectl config set-context kind
 	@cd ../stackx-backend && kubectl apply -f ci/manifest.yaml
 	@kubectl rollout restart deployment stackx-backend -n stackx
@@ -86,7 +88,15 @@ back-docker-build-dev: ## Build development docker image with hot-reloading.
 b-docker-push: back-docker-push
 .PHONY: back-docker-push
 back-docker-push: ## Push Docker image to registry.
-	@printf "\nBACKEND - Build custom dev image for minikube with hot-reloading ..."
+	@printf "\nBACKEND - Push image to registry ..."
+	docker push ${IMG_BACKEND}
+	@printf "\033[36m make $@\033[0m: Finished\n"
+
+.PHONY: b-docker-push-dev
+b-docker-push-dev: back-docker-push-dev
+.PHONY: back-docker-push-dev
+back-docker-push-dev: ## Push dev Docker image to local registry.
+	@printf "\nBACKEND - Push custom dev image to local registry ..."
 	docker push ${IMG_BACKEND}
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
@@ -104,14 +114,6 @@ b-go-get: back-go-get
 back-go-get: ## Run go get -u for your go.mod file.
 	@printf "\nBACKEND - Run go get -u to update all deps ..."
 	@cd ../stackx-backend && go get -u
-	@printf "\033[36m make $@\033[0m: Finished\n"
-
-.PHONY: b-kind-load
-b-kind-load: back-kind-load
-.PHONY: back-kind-load
-back-kind-load: ## Load Docker image into Kind cluster.
-	@printf "\nBACKEND - Load image into kind cluster ..."
-	@kind load docker-image ${IMG_BACKEND}
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: b-k-logs
@@ -173,9 +175,9 @@ ctrl-doc: ## Build Swagger/OpenAPI documentation.
 	@cd ../stackx-controller && swag init -g main.go --output docs
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
-.PHONY: ctrl-deploy-kind
-ctrl-deploy-kind: ## Deploy to K8s Kind cluster.
-	@printf "\nCONTROLLER - Deploy to kind ..."
+.PHONY: ctrl-deploy-local
+ctrl-deploy-local: ## Deploy to local K8s cluster.
+	@printf "\nCONTROLLER - Deploy to local K8s ..."
 	@kubectl config set-context kind
 	@cd ../stackx-controller && kubectl apply -f ci/manifest.yaml
 	@kubectl rollout restart deployment stackx-controller -n stackx
@@ -205,16 +207,18 @@ ctrl-docker-push: ## Push Docker image to registry.
 	docker push ${IMG_CONTROLLER}
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
+.PHONY: c-docker-push-dev
+c-docker-push-dev: ctrl-docker-push-dev
+.PHONY: ctrl-docker-push-dev
+ctrl-docker-push-dev: ## Push dev Docker image to local registry.
+	@printf "\nCONTROLLER - Push custom dev image to local registry ..."
+	docker push ${IMG_CONTROLLER}
+	@printf "\033[36m make $@\033[0m: Finished\n"
+
 .PHONY: ctrl-fmt
 ctrl-fmt: ## Run go fmt against code.
 	@printf "\nCONTROLLER - Run go fmt to format your code ..."
 	@cd ../stackx-controller && go fmt ./...
-	@printf "\033[36m make $@\033[0m: Finished\n"
-
-.PHONY: ctrl-kind-load
-ctrl-kind-load: ## Load Docker image into Kind cluster.
-	@printf "\nCONTROLLER - Load image into kind cluster ..."
-	@kind load docker-image ${IMG_CONTROLLER}
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: ctrl-go-get
@@ -262,9 +266,9 @@ front-build: ## Build Javascript code.
 	@cd ../stackx-frontend && npm run build
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
-.PHONY: front-deploy-kind
-front-deploy-kind: ## Deploy to K8s Kind cluster.
-	@printf "\nFRONTEND - Deploy to kind ..."
+.PHONY: front-deploy-local
+front-deploy-local: ## Deploy to local K8s cluster.
+	@printf "\nFRONTEND - Deploy to local K8s ..."
 	@kubectl config set-context kind
 	@cd ../stackx-front && kubectl apply -f ci/manifest.yaml
 	@kubectl rollout restart deployment stackx-frontend -n stackx
@@ -294,16 +298,18 @@ front-docker-push: ## Push Docker image to registry.
 	docker push ${IMG_FRONTEND}
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
+.PHONY: f-docker-push-dev
+f-docker-push-dev: front-docker-push-dev
+.PHONY: front-docker-push-dev
+front-docker-push-dev: ## Push dev Docker image to local registry.
+	@printf "\nFRONTEND - Push custom dev image to local registry ..."
+	docker push ${IMG_FRONTEND}
+	@printf "\033[36m make $@\033[0m: Finished\n"
+
 .PHONY: front-fmt
 front-fmt: ## Run npm run fmt against code.
 	@printf "\nFRONTEND - Run go fmt to format your code ..."
 	@cd ../stackx-frontend && npm run fmt
-	@printf "\033[36m make $@\033[0m: Finished\n"
-
-.PHONY: front-kind-load
-front-kind-load: ## Load Docker image into Kind cluster.
-	@printf "\nFRONTEND - Load image into kind cluster ..."
-	kind load docker-image ${IMG_FRONTEND}
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: front-kubectl-logs
@@ -389,36 +395,31 @@ kubescore: ## Run kubescore on your chart.
 .PHONY: kind-start
 kind-start: ## Starts a new Kind cluster.
 	@printf "\nStarting kind cluster ..."
-	@kind create cluster --config=ci/kind.yaml
+	@kind create cluster --image kindest/node:v${K8S_VERSION} --name stackx --config ci/kind.yaml
+	#@cat ci/kind.yaml | sed "s|hostPath: .*|hostPath: $(dirname $$(pwd))/|" - | kind create cluster --image kindest/node:v${K8S_VERSION} --name stackx --config -
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: kind-delete
 kind-delete: ## Deletes the Kind cluster.
 	@printf "\nDelete kind cluster ..."
-	@kind delete cluster
+	@kind delete cluster --name stackx
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
+.PHONY: kind-context
+kind-context: ## Switch Kubeconfig context to kind.
+	@printf "\nSwitch Kube Context ..."
+	@kind get kubeconfig --name stackx > $(HOME)/.kube/kind.yaml
+	@kubectl config set-context ".kube/kind-kind"
+	@printf "\033[36m make $@\033[0m: Finished\n"
 
 ##@ Minikube (minikube, mk)
 
-.PHONY: mk-deploy
-mk-deploy: minikube-deploy
-.PHONY: minikube-deploy
-minikube-deploy: ## Deploy all components to Minikube.
-	@printf "\nDeploy ALL to minikube ..."
+.PHONY: mk-context
+mk-context: minikube-context
+.PHONY: minikube-context
+minikube-context: ## Switch Kubeconfig context to minikube.
+	@printf "\nSwitch Kube Context ..."
 	@minikube update-context -p stackx
-	@printf "stackx-controller ..."
-	@cd ../stackx-controller
-	@kubectl apply -f ../stackx-controller/hack/manifest-minikube.yaml
-	@kubectl rollout restart deployment stackx-controller -n stackx
-	@printf "stackx-backend ..."
-	@cd ../stackx-backend
-	@kubectl apply -f ../stackx-backend/hack/manifest-minikube.yaml
-	@kubectl rollout restart deployment stackx-backend -n stackx
-	@printf "stackx-frontend ..."
-	@cd ../stackx-frontend
-	@kubectl apply -f ../stackx-frontend/ci/manifest.yaml
-	@kubectl rollout restart deployment stackx-frontend -n stackx
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: mk-delete
@@ -454,6 +455,16 @@ minikube-stop: ## (stop) Stopping the Minikube cluster.
 	@printf "\nStopping minikube cluster ..."
 	@minikube stop -p stackx
 	@printf "\033[36m make $@\033[0m: Finished\n"
+
+.PHONY: mk-load
+mk-load: minikube-load
+.PHONY: minikube-load
+minikube-load: ## Loads all docker images into Minikube.
+	@printf "\nLoad ALL images into minikube cluster ... (this will take a while)"
+	@minikube image load ${IMG_BACKEND} -p stackx
+	@minikube image load ${IMG_CONTROLLER} -p stackx
+	@minikube image load ${IMG_FRONTEND} -p stackx
+	@printf "\n\033[36m make $@\033[0m: Finished\n"
 
 
 ##@ Terraform (tf, t)
@@ -584,25 +595,11 @@ tf-validate: ## Run terraform validate for some basic HCL validation.
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 
-##@ ALL
+##@ Docker
 
-.PHONY: start-dev
-.PHONY: start
-start: start-dev
-start-dev: dev ## 🚀 (start) Starts Minikube, build & deploy ALL for dev (hot reload).
-
-.PHONY: purge
-purge: clean-all
-.PHONY: clean-all
-clean-all: minikube-destroy ## 🗑️  (clean, destroy, purge) Clean EVERYTHING (Docker, Minikube, Kind, binaries, ...)
-	@printf "\nCleaning all ..."
-	@kind delete cluster
-	@docker system prune -a -f
-	@docker images purge
-	@docker stop $(docker ps -a -q)
-	@docker rmi $(docker images -a -q) -f
-	@docker rm $(docker ps -a -q)
-	@docker volume prune -f
+.PHONY: local-registry
+local-registry: ## Start local registry.
+	@./hack/local-registry.sh
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: docker-build
@@ -617,18 +614,46 @@ docker-build-dev: back-docker-build-dev ctrl-docker-build-dev front-docker-build
 docker-push: back-docker-push ctrl-docker-push front-docker-push ## Push all Docker images to registry.
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
+.PHONY: docker-push-dev
+docker-push-dev: back-docker-push-dev ctrl-docker-push-dev front-docker-push-dev ## Push all dev Docker images to local registry.
+	@printf "\033[36m make $@\033[0m: Finished\n"
+
+
+##@ ALL
+
+.PHONY: purge
+purge: clean-all
+.PHONY: clean-all
+clean-all: minikube-destroy ## 🗑️  (clean, destroy, purge) Clean EVERYTHING (Docker, Minikube, Kind, binaries, ...)
+	@printf "\nCleaning all ..."
+	@kind delete cluster --name stackx
+	@docker system prune -a -f
+	@docker images purge
+	@docker stop $(docker ps -a -q)
+	@docker rmi $(docker images -a -q) -f
+	@docker rm $(docker ps -a -q)
+	@docker volume prune -f
+	@printf "\033[36m make $@\033[0m: Finished\n"
+
+.PHONY: deploy-all
+deploy-all: ## Deploy all apps to local K8s cluster.
+	@printf "\nDeploy ALL to local K8s ..."
+	@printf "stackx-controller ..."
+	@cd ../stackx-controller
+	@kubectl apply -f ../stackx-controller/hack/manifest-minikube.yaml
+	@kubectl rollout restart deployment stackx-controller -n stackx
+	@printf "stackx-backend ..."
+	@cd ../stackx-backend
+	@kubectl apply -f ../stackx-backend/hack/manifest-minikube.yaml
+	@kubectl rollout restart deployment stackx-backend -n stackx
+	@printf "stackx-frontend ..."
+	@cd ../stackx-frontend
+	@kubectl apply -f ../stackx-frontend/ci/manifest.yaml
+	@kubectl rollout restart deployment stackx-frontend -n stackx
+	@printf "\033[36m make $@\033[0m: Finished\n"
+
 .PHONY: logs
 logs: ## Tail ALL logs with kubetail
 	@printf "\nTail ALL logs with kubetail ..."
 	@ kubetail '(backend|controller|frontend)' -e regex -n stackx
 	@printf "\033[36m make $@\033[0m: Finished\n"
-
-.PHONY: mk-load
-mk-load: minikube-load
-.PHONY: minikube-load
-minikube-load: ## Loads all docker images into Minikube.
-	@printf "\nLoad ALL images into minikube cluster ... (this will take a while)"
-	@minikube image load ${IMG_BACKEND} -p stackx
-	@minikube image load ${IMG_CONTROLLER} -p stackx
-	@minikube image load ${IMG_FRONTEND} -p stackx
-	@printf "\n\033[36m make $@\033[0m: Finished\n"
