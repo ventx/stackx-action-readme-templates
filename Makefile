@@ -80,7 +80,7 @@ b-docker-build-dev: back-docker-build-dev
 .PHONY: back-docker-build-dev
 back-docker-build-dev: ## Build development docker image with hot-reloading.
 	@printf "\nBACKEND - Build custom dev image for minikube with hot-reloading ..."
-	@printf "\nBACKEND: Copy stackx-controller ...\n"
+	@printf "\nBACKEND: Copy stackx-controller (dependency) ...\n"
 	@cd ../stackx-backend && rm -rf ./stackx-controller && cp -rf ../stackx-controller . && docker build -t ${IMG_BACKEND} -f hack/Dockerfile .
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
@@ -350,9 +350,22 @@ d-deploy: dep-deploy
 .PHONY: dep-deploy
 dep-deploy: ## Deploy depencencies (flux, tf-controller) to cluster.
 	@printf "\nDeploy dependencies (flux, tf-controller) ..."
+	@printf "\nDeploy flux ...\n"
 	@flux install
+	@printf "\nDeploy flux completed.\n"
+	@printf "\nDeploy tf-controller ..."
 	@helm upgrade -i tf-controller tf-controller/tf-controller --namespace flux-system
+	@printf "\nDeploy tf-controller completed.\n"
+	@printf "\nDeploy stackx-controller CRDs ...\n"
 	@cd ../stackx-controller && make install
+	@printf "\nDeploy stackx-controller CRDs completed.\n"
+	@printf "\nDeploy ingress-nginx controller ...\n"
+	@kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+	@kubectl wait --namespace ingress-nginx \
+      --for=condition=ready pod \
+      --selector=app.kubernetes.io/component=controller \
+      --timeout=90s
+	@printf "\nDeploy ingress-nginx controller completed.\n"
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 .PHONY: h-lint
@@ -571,14 +584,9 @@ tf-plan: ## Run terraform plan for your code.
 t-test: tf-test
 .PHONY: tf-test
 tf-test: tf-test-init ## Run terratest for your code.
-	@printf "\nTERRAFORM - Run terratest ..."
+	@printf "\nTERRAFORM - Run terraform test ..."
+	@terraform test -verbose
 	@cd tests && go test -v -count 1 -short -timeout "30m" -parallel 16 `go list ./...`
-	@printf "\033[36m make $@\033[0m: Finished\n"
-
-.PHONY: tf-test-fast
-tf-test-fast: ## Run terratest against localstack with 64 (tf-test: 16) parallel requests for your code.
-	@printf "\nTERRAFORM - Run terratest against localstack with 64 parallel requests ...\n"
-	@cd tests && go test -v -count 1 -short -timeout "10m" -parallel 64 `go list ./...`
 	@printf "\033[36m make $@\033[0m: Finished\n"
 
 tf-test-init:
